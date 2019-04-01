@@ -260,7 +260,37 @@ Disconnect the output directory from the build process. Comment out the item in 
 // "outDir": "./../../dist/schematics/@acme/frontend-schematics",
 ```
 
+> Note: this allows the debugger to attach to the source code of the schematic. The `tsc` command will create an
+> ES Module in the schematic's directory (i.e., index.js). 
+
+```js
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+// You don't have to export the function as default. You can also have more than one rule factory
+// per file.
+function blank(_options) {
+    return (tree, _context) => {
+        _context.logger.info('Hello Schematics');
+        return tree;
+    };
+}
+exports.blank = blank;
+//# sourceMappingURL=index.js.map
+```
+
+Probably a good idea to exclude the .js files from the Git repository.
+
+*.gitignore*
+```ts
+# Outputs
+src/**/*.js
+src/**/*.js.map
+src/**/*.d.ts
+```
+
 ### Create a Launch Configuration for the Node App
+
+The launch configuration allows Visual Studio Code to launch the schematic as an application and pass in arguments. This emulates an actual schematic command from the terminal.
 
 ```json
 {
@@ -280,5 +310,196 @@ Disconnect the output directory from the build process. Comment out the item in 
             "outFiles": []
         }
     ]
+}
+```
+
+The above launch configuration is equivalent to the following. 
+
+```
+ng generate @acme/frontend-schematics:blank --name=frontend-fest --project=web-one --dry-run
+```
+
+### Attaching to the Debugger
+
+1. build the schematic to update the source files (i.e., *.js files) in the project.
+2. add a breakpoint to the `index.js` file
+3. launch the `With Debugging` debugger
+
+## Generate Content using Templates
+
+* create a `files` folder for the schematic
+* create a template `options.txt` with the following template text
+
+```ts
+<% if (name) { %>
+  Hello <%= name %>, I'm a schematic at <%= currentDateTime.toUTCString() %>.
+<% } else { %>
+  Why don't you give me your name with --name?
+<% } %>
+```
+
+> Note: the template is using some external information in the `<%= INPUT_OPTIONS %>`.
+
+### Introducing Input via Options
+
+* define options for the schematic
+* use the `id` value as the type name for the options in the factory method's constructor
+* define an interface for the options.  
+
+Create a `schema.json` for the schematic.
+
+```json
+{
+  "$schema": "http://json-schema.org/schema",
+  "id": "MyFullSchematicsSchema",
+  "title": "My Schematics Schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the item.",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      }
+    },
+    "path": {
+      "type": "string",
+      "format": "path",
+      "description": "The path to create the item.",
+      "visible": false
+    },
+    "project": {
+      "type": "string",
+      "description": "The name of the project.",
+      "$default": {
+        "$source": "projectName"
+      }
+    },
+    "currentDateTime": {
+      "type": "object",
+      "description": "Use to indicate the date of the schematic run (not required)."
+    }
+  },
+  "required": [
+    "name",
+    "project"
+  ]
+}
+```
+
+Create a `schema.d.ts` type definition file for the `FullSchematicOptions` options schema.
+
+```ts
+
+export interface FullSchematicOptions {
+
+    /**
+     * Use to provide a name value for the schematic (required).
+     */
+    name: string;
+
+    /**
+     * Use to provide a specific path.
+     */
+    path: string;
+
+    /**
+     * Use to indicate the name of the project to apply the template changes (required).
+     */
+    project: string;
+
+    /**
+     * Use to indicate the time of the schematic run (value supplied during runtime).
+     */
+    currentDateTime: Date;
+}
+```
+
+### Update the Schematic Entry Point (Factory Method)
+
+```ts
+import {
+  Rule,
+  SchematicContext,
+  SchematicsException,
+  Tree,
+  apply,
+  mergeWith,
+  move,
+  template,
+  url,
+  branchAndMerge,
+} from '@angular-devkit/schematics';
+import { strings } from '@angular-devkit/core';
+import { parseName } from '@schematics/angular/utility/parse-name'
+import { getWorkspace } from '@schematics/angular/utility/config'
+import { buildDefaultPath } from '@schematics/angular/utility/project'
+import { WorkspaceProject } from '@schematics/angular/utility/workspace-models';
+
+import { FullSchematicOptions } from './schema';
+
+/**
+ * Use to setup the target path using the specified options [project].
+ * @param host the current [Tree]
+ * @param options the current [options]
+ * @param context the [SchematicContext]
+ */
+export function setupOptions(host: Tree, options: FullSchematicOptions, context: SchematicContext) {
+  const workspace = getWorkspace(host);
+  if (!options.project) {
+    context.logger.error(`The [project] option is missing.`);
+    throw new SchematicsException('Option (project) is required.');
+  }
+  context.logger.info (`Preparing to retrieve the project using: ${options.project}`);
+  const project = <WorkspaceProject>workspace.projects[options.project];
+
+  if (options.path === undefined) {
+    context.logger.info(`Preparing to determine the target path.`);
+    options.path = buildDefaultPath(project);
+    context.logger.info(`The target path: ${options.path}`);
+  }
+
+  const parsedPath = parseName(options.path, options.name);
+  options.name = parsedPath.name;
+  options.path = parsedPath.path;
+
+  context.logger.info(`Finished options setup.`);
+  return host;
+}
+
+export default function (options: FullSchematicOptions): Rule {
+  return (host: Tree, context: SchematicContext) => {
+
+    setupOptions(host, options, context);
+
+    // setup a variable [currentDateTime] programmatically --> used in template;
+    options.currentDateTime = new Date(Date.now());
+
+    const templateSource = apply(url('./files'), [
+      template({
+        ...strings,
+        ...options,
+      }),
+      move(options.path),
+    ]);
+
+    return branchAndMerge(mergeWith(templateSource));
+  };    
+}
+```
+
+Update the definition of the schematic to use the `schema.json` - this allows the options to be strongly typed. The also provides the specified configuration for the options (type, required, etc.).
+
+```json
+{
+  "$schema": "../../../node_modules/@angular-devkit/schematics/collection-schema.json",
+  "schematics": {
+    "blank": {
+      "description": "A blank schematic.",
+      "factory": "./blank/index#blank",
+      "schema": "./blank/schema.json"
+    }
+  }
 }
 ```

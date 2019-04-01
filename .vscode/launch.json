@@ -11,9 +11,9 @@
             "program": "${workspaceFolder}/node_modules/@angular-devkit/schematics-cli/bin/schematics.js",
             "args": [
                 ".:blank",
-                "--name=some-options",
+                "--name=frontend-fest",
                 "--project=web-one",
-                "--dry-run=true"
+                "--dry-run=false"
             ],
             "outFiles": []
         }
