@@ -1,7 +1,8 @@
 # Schematics: Getting Started
 
-
 ## Setup Environment
+
+### Add Nrwl.io Nx Schematics
 
 Add the Nrwl.io `Nx` schematics to your global development environment.
 
@@ -9,14 +10,8 @@ Add the Nrwl.io `Nx` schematics to your global development environment.
 npm install -g @nrwl/schematics @nrwl/nx
 ```
 
-Create a new `workspace`:
 
-```ts
-create-nx-workspace frontend-fest-schematics
-```
-
-Install the `dependencies` to create new schematics.
-
+### Install the `dependencies` to Create New Schematics
 
 ```ts
 npm install -g @angular-devkit/schematics
@@ -24,10 +19,81 @@ npm install -g @angular-devkit/schematics-cli
 npm install -D @angular-devkit/schematics-cli
 ```
 
-Install `utility` items for Angular schematics:
+### Install `utility` Items for Angular Schematics
 
 ```ts
 npm install -D @schematics/angular
+```
+
+### Create a New Workspace
+
+```ts
+create-nx-workspace frontend-fest-schematics
+```
+
+## CLI Schematics
+
+* create a web application
+  * generate a component
+* create a logging library
+  * add a service class
+
+```ts
+ng generate application --name=webOne
+ng generate component about --project=web-one
+ng generate library --name=logging --publishable
+ng generate service logging --project=logging
+```
+
+### Generate an Application
+
+```ts
+ng generate application --name=webOne
+```
+
+### Generate a Library
+
+* options
+  * directory
+  * framework
+  * lazy
+  * module
+  * parent-module
+  * prefix
+  * publishable
+  * routing
+  * simple-module-name
+
+```ts
+ng generate library --name=logging --dry-run --help
+```
+
+Add some options for the specified CLI command (i.e., library schematic template)
+
+```ts
+ng generate library --name=logging --publishable --dry-run
+? In which directory should the library be generated?
+? What framework should this library use? Typescript [ https://www.typescriptlang.org/ ]
+? Which stylesheet format would you like to use? CSS
+? Which tags would you like to add to the library? (used for linting)
+? Which Unit Test Runner would you like to use for the library? Jest [https://jestjs.io/]
+CREATE libs/logging/ng-package.json (157 bytes)
+CREATE libs/logging/package.json (152 bytes)
+CREATE libs/logging/README.md (995 bytes)
+CREATE libs/logging/tsconfig.lib.json (457 bytes)
+CREATE libs/logging/tslint.json (52 bytes)
+CREATE libs/logging/src/index.ts (0 bytes)
+CREATE libs/logging/src/lib/.gitkeep (0 bytes)
+CREATE libs/logging/tsconfig.json (123 bytes)
+CREATE jest.config.js (284 bytes)
+CREATE libs/logging/tsconfig.spec.json (212 bytes)
+CREATE libs/logging/jest.config.js (126 bytes)
+UPDATE angular.json (5013 bytes)
+UPDATE package.json (3899 bytes)
+UPDATE nx.json (332 bytes)
+UPDATE tsconfig.json (552 bytes)
+
+NOTE: The "dryRun" flag means no changes were made.
 ```
 
 ## Add New Schematic
@@ -46,7 +112,7 @@ schematics
 schematics --list-schematics
 ```
 
-Change to the new `schematics` directory - create a new blank schematic project using the schematics template called `blank`
+Change to the new `schematics` directory - create a new `blank` schematic project using the schematics template called `blank`
 
 ```ts
 schematics blank --name=blank
@@ -61,7 +127,7 @@ Update the name of the schematic project.
 * add a scope name: `@acme`
 * update the name of the project: `frontend-schematics`
 
-```ts
+```json
 "name": "@acme/frontend-schematics",
 ```
 
@@ -171,7 +237,7 @@ A published project can use a `scope` name to group items related to a specific 
 > This is unfortunate - because the project name should be different than the name of a schematic in the collection.
 
 ```ts
-"name": "@frontendfest/schematics",
+"name": "@acme/frontend-schematics",
 ```
 
 ## Build Schematic
@@ -181,6 +247,9 @@ Use the terminal and run the following command to build the schematics project. 
 ```ts
 npm run build:schematics
 ```
+
+> Note: Repeat this process to build and publish the schematic as a package (library). 
+
 ## Link the Schematic
 
 Typically, you would publish your schematic to a package repository so it can be used like other schematics - using a `npm install -g <YOUR-SCHEMATIC-NAME-HERE>`. 
@@ -188,7 +257,7 @@ Typically, you would publish your schematic to a package repository so it can be
 However, in our local workspace development environment, use the `npm link` command to load the build output into the `node_modules`.
 
 ```ts
-npm link ./dist/schematics/blank
+npm link ./dist/schematics/@acme/frontend-schematics
 ```
 
 ## Using the Schematic
@@ -202,48 +271,6 @@ Nothing to be done.
 NOTE: The "dryRun" flag means no changes were made.
 ```
 
-### Create a Target for the Schematic
-
-```ts
- ng generate application --name=webOne
-? What framework would you like to use for the application? Angular         [ https://angular.io   ]
-? In which directory should the application be generated?
-? Which stylesheet format would you like to use? CSS
-? Which Unit Test Runner would you like to use for the application? Karma [ https://karma-runner.github.io ]
-? Which E2E Test Runner would you like to use for the application? Protractor [ https://www.protractortest.org ]
-? Which tags would you like to add to the application? (used for linting)
-CREATE apps/web-one/tsconfig.json (118 bytes)
-CREATE apps/web-one-e2e/tsconfig.json (132 bytes)
-CREATE apps/web-one-e2e/protractor.conf.js (757 bytes)
-CREATE apps/web-one-e2e/tsconfig.e2e.json (210 bytes)
-CREATE apps/web-one-e2e/src/app.e2e-spec.ts (672 bytes)
-CREATE apps/web-one-e2e/src/app.po.ts (260 bytes)
-CREATE apps/web-one/browserslist (388 bytes)
-CREATE apps/web-one/tsconfig.app.json (200 bytes)
-CREATE apps/web-one/tslint.json (205 bytes)
-CREATE apps/web-one/src/favicon.ico (5430 bytes)
-CREATE apps/web-one/src/index.html (339 bytes)
-CREATE apps/web-one/src/main.ts (375 bytes)
-CREATE apps/web-one/src/polyfills.ts (2839 bytes)
-CREATE apps/web-one/src/styles.css (80 bytes)
-CREATE apps/web-one/src/assets/.gitkeep (0 bytes)
-CREATE apps/web-one/src/environments/environment.prod.ts (51 bytes)
-CREATE apps/web-one/src/environments/environment.ts (662 bytes)
-CREATE apps/web-one/src/app/app.module.ts (297 bytes)
-CREATE apps/web-one/src/app/app.component.html (614 bytes)
-CREATE apps/web-one/src/app/app.component.spec.ts (976 bytes)
-CREATE apps/web-one/src/app/app.component.ts (220 bytes)
-CREATE apps/web-one/src/app/app.component.css (0 bytes)
-CREATE karma.conf.js (1012 bytes)
-CREATE apps/web-one/tsconfig.spec.json (238 bytes)
-CREATE apps/web-one/karma.conf.js (485 bytes)
-CREATE apps/web-one/src/test.ts (642 bytes)
-UPDATE angular.json (4032 bytes)
-UPDATE package.json (3605 bytes)
-UPDATE nx.json (291 bytes)
-UPDATE tslint.json (2184 bytes)
-```
-
 ## Debug Mode: Debugger Configuration
 
 ### Allow the Workspace to Attach to the Schematic
@@ -254,15 +281,16 @@ Enable the Workspace to attach to the specified schematic. Add the following to 
 "schematics": "./schematics/blank/src/collection.json",
 ```
 
-Disconnect the output directory from the build process. Comment out the item in the schematic project's `tsconfig.json` file.
+*Disconnect* the output directory from the build process. Comment out the item in the schematic project's `tsconfig.json` file.
 
 ```ts
 // "outDir": "./../../dist/schematics/@acme/frontend-schematics",
 ```
 
 > Note: this allows the debugger to attach to the source code of the schematic. The `tsc` command will create an
-> ES Module in the schematic's directory (i.e., index.js). 
+> ES Module in the schematic's directory (i.e., index.js and other JS files). 
 
+*schematics\blank\src\blank\index.js*
 ```js
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -497,7 +525,7 @@ Update the definition of the schematic to use the `schema.json` - this allows th
   "schematics": {
     "blank": {
       "description": "A blank schematic.",
-      "factory": "./blank/index#blank",
+      "factory": "./blank",
       "schema": "./blank/schema.json"
     }
   }
